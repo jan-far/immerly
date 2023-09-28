@@ -35,7 +35,7 @@ module.exports = {
     ignorePatterns: ['**/generated/graphql.tsx'],
     overrides: [
         {
-            files: ['**/icons/*.tsx'],
+            files: ['**/icons/*.tsx', '*.tsx'],
             rules: {
                 'max-len': 'off',
             },
