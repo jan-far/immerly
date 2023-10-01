@@ -18,4 +18,7 @@ export class ExchangeRateDTO {
 
     @Expose()
     rate!: string;
+
+    @Expose()
+    createdAtUtc!: Date;
 }

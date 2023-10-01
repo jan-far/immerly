@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { InjectRepository } from '@nestjs/typeorm';
+import { HttpService } from '@nestjs/axios';
 import { MoreThan, Repository } from 'typeorm';
+import { firstValueFrom, map } from 'rxjs';
 import { ExchangeRate } from '../../entities';
 import { ExchangeRateDTO } from '../../entity-modules/example/dto/exchangeRate.dto';
 
@@ -9,7 +11,8 @@ import { ExchangeRateDTO } from '../../entity-modules/example/dto/exchangeRate.d
 export class ExchangeRateService {
     constructor(
         @InjectRepository(ExchangeRate)
-        private exchangeRateRepository: Repository<ExchangeRate>
+        private exchangeRateRepository: Repository<ExchangeRate>,
+        private readonly httpService: HttpService
     ) {}
 
     public getExchangeRates = async (): Promise<ExchangeRateDTO[]> => {
@@ -28,8 +31,14 @@ export class ExchangeRateService {
         }
 
         const API_LINK = 'https://api.cnb.cz/cnbapi/exrates/daily?lang=EN';
-        const response = await fetch(API_LINK);
-        const data: { rates: ExchangeRateDTO[] } = await response.json();
+        const response = await this.httpService.get(API_LINK);
+        const data: { rates: ExchangeRateDTO[] } = await firstValueFrom(
+            response.pipe(
+                map((res) => {
+                    return res.data;
+                })
+            )
+        );
 
         const result = await Promise.all(
             data.rates.map(async (d: ExchangeRateDTO) => {
@@ -47,9 +56,9 @@ export class ExchangeRateService {
         );
 
         const res = result
-            .map((rate) =>
-                plainToInstance(ExchangeRateDTO, rate, { excludeExtraneousValues: true })
-            )
+            .map((rate) => {
+                return plainToInstance(ExchangeRateDTO, rate, { excludeExtraneousValues: true });
+            })
             .sort((a, b) => (a.country > b.country ? 1 : -1));
         return res;
     };

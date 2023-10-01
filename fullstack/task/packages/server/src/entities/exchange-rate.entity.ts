@@ -1,6 +1,6 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { Transform } from 'class-transformer';
-import { IsNumber, IsString, MinLength } from 'class-validator';
+import { IsDate, IsNumber, IsString, MinLength } from 'class-validator';
 import { Column, Entity } from 'typeorm';
 import { EntityWithMeta } from '../common';
 import { INT, VAR_CHAR } from './constants';
@@ -36,4 +36,9 @@ export class ExchangeRate extends EntityWithMeta {
     @Column({ ...VAR_CHAR })
     @Transform((value) => String(value.obj.rate))
     public rate!: string;
+
+    @IsDate()
+    @Field(() => Date)
+    @Column({ type: 'date' })
+    public createdAtUtc!: Date;
 }

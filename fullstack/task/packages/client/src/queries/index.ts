@@ -9,6 +9,7 @@ export const GET_EXCHANGE_RATES = gql`
             amount
             rate
             currency
+            createdAtUtc
         }
     }
 `;

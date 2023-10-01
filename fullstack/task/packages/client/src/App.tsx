@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Table,
     TableBody,
@@ -18,12 +18,47 @@ interface IExchangeRates {
     amount: number;
     rate: string;
     currency: string;
+    createdAtUtc: Date;
 }
 
 export const App = () => {
     const { loading, error, data } = useQuery(GET_EXCHANGE_RATES);
     const [filtered, setFiltered] = useState<IExchangeRates[]>([]);
     const [searchKeyword, setSearchKeyword] = useState<string>('');
+    const [timeDifference, setTimeDifference] = useState('0');
+
+    const updateTimeDifference = () => {
+        const currentTime = new Date().getTime();
+        const lastUpdatedTime = new Date(exchangeRates[0].createdAtUtc).getTime();
+
+        const difference = currentTime - lastUpdatedTime;
+
+        // Calculate time units (days, hours, minutes, seconds)
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        // Create a formatted string
+        const formattedTimeDifference = `${days > 0 ? `${days}d ` : ''}${
+            hours > 0 ? `${hours}h ` : ''
+        }${minutes}m ${seconds}s`;
+
+        // Update the state with the formatted time difference
+        setTimeDifference(formattedTimeDifference);
+    };
+
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+        if (data) {
+            updateTimeDifference();
+            intervalId = setInterval(updateTimeDifference, 1000);
+        }
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [data]);
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error.message}</p>;
@@ -63,10 +98,13 @@ export const App = () => {
     };
 
     return (
-        <div className="md:container md:mx-auto py-5 relative overflow-x-auto shadow-md sm:rounded-lg">
+        <div className="md:container md:mx-auto mx-2 py-5 relative overflow-x-auto shadow-md sm:rounded-lg">
             <blockquote className="  px-2 pb-4 text-lg font-semibold text-left text-gray-900 w-full">
                 Exchange Rate Today - {new Date().toDateString()}
-                <p className="mt-1 text-sm font-normal text-gray-500">
+                <p className="font-semibold text-xs text-gray-500 mb-2">
+                    Last Updated: {timeDifference} ago
+                </p>
+                <p className="mt-1 text-sm font-normal text-gray-500 sm:items-center">
                     Checkouk the list of the Czech Republic current exchange rates for foreign
                     currency
                 </p>
@@ -100,7 +138,7 @@ export const App = () => {
                     <input
                         type="text"
                         id="table-search"
-                        className="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        className="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg sm:w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 xs:w-[80%]"
                         placeholder="Search by currency and country"
                         value={searchKeyword}
                         onChange={(e) => handleSearch(e.target.value)}
